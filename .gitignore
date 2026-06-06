@@ -1,0 +1,6 @@
+# Obsidian local app config & community plugins — per-machine, not content.
+# (Keeps third-party plugin binaries out of a public-candidate repo.)
+.obsidian/
+
+# OS cruft
+.DS_Store
