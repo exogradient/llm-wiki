@@ -13,12 +13,23 @@ Operational schema for this KB. *What it is and why this shape* live in `README.
 
 **Role split (drives everything below):** the human sources material and asks questions; the LLM **owns the wiki layer entirely** — it creates and updates pages, maintains cross-references, and keeps everything consistent.
 
+## Two tracks
+
+**Orientation — applied lean (governs everything).** The whole repo tilts *applied*: even frontier material is filtered to what's ready to apply or already in use, not theory for its own sake. A research/theory view is tracked and sometimes leads, but effort and attention always weight the applied side. When deciding what to deepen, cut, or admit, prefer the applied angle.
+
+The two tracks are **deliberately different in profile and structure** — not one page-shape with different labels. Every page declares its track (frontmatter `track:`):
+
+- **Frontier** — deep exploration near the edge, applied-filtered. **Wide and relational**: covers a concept *and how it relates to the similar in-use concepts around it*. Draws on **noisy, contested sources** (recent papers, blogs) — surfaces the competing views and pressure-tests them; usually **longer**, `draft`/`unverified`, organized around tensions and `Open threads` (e.g. `[[on-policy-distillation]]`). The research/theory angle lives in `Open threads`, downweighted from the applied main content.
+- **Foundation** — building blocks, edtech-style. **One concept**, built up step by step; **short and focused**; **self-contained** (no `raw/` — a short inline `## References` instead). Draws on **stable, largely-settled industry knowledge** (still showing multiple perspectives where they exist, just far less contested); `stable` (e.g. `[[cross-entropy]]`).
+
+Pages never link across tracks — each builds self-contained (within-track links are fine).
+
 ## Layers
 
 Files are either **content** (the knowledge itself) or **nav & config** (what helps you move through and maintain it). Karpathy's pattern defines all of these except `dashboard.md`, which is our addition.
 
 **Content**
-- `raw/<concept-slug>/` — **immutable** source material: links, IDs, and verbatim quotes pulled from the originals. Never paraphrase here; this is the addressable ground truth a wiki page compresses. One subfolder per concept. **Name raw files with a concept prefix** (e.g. `<slug>-sources.md`), never a bare generic name like `sources.md` — Obsidian resolves `[[wikilinks]]` and labels Graph View nodes by *basename*, so duplicate basenames collide.
+- `raw/<concept-slug>/` — **verbatim source layer**: links, IDs, and quotes from the originals (the addressable ground truth a wiki page compresses; never paraphrase). The layer **evolves** — sources added as they emerge, old ones pruned or simplified to footnotes — so its **frontmatter stays stable to that churn**: title/description only, no dates or counts (git tracks *when*; per-entry prose carries dates where they contextualize how a source was read). A **Frontier device** — Foundation pages skip `raw/` for an inline `## References`. One subfolder per concept. **Name files with a concept prefix** (`<slug>-sources.md`, never a bare `sources.md`) — Obsidian resolves `[[wikilinks]]` and labels Graph View by *basename*, so duplicates collide.
 - `wiki/<concept-slug>.md` — **LLM-generated** concept pages. Synthesis lives here. Every page cites back into `raw/` so the compression is never severed from its source.
 
 **Nav & config**
@@ -39,7 +50,7 @@ Three tiers, in priority order. When something has to give, never compromise an 
 - **Separate synthesis from evidence.** The body is our thinking; an `## Evidence` section at the bottom holds external data points with full provenance (source, date, what was verified, how). Evidence can expire without invalidating the synthesis.
 
 **Structure — keeps it navigable & agent-usable** (the data model)
-- **Frontmatter required** on every wiki page: `title`, `description`, `tags`, `status`, `sources` (the `raw/` items it draws on), `last_reviewed` (date). Use **underscores, not hyphens**, in property keys — Dataview/DQL parses `-` as a minus operator, so `last-reviewed` breaks queries.
+- **Frontmatter required** on every wiki page: `title`, `description`, `tags`, `status`, `track` (`frontier` | `foundation`, see Two tracks), `last_reviewed` (date). **Frontier** pages also carry `sources` (their `raw/` items); **Foundation** pages omit it (no `raw/`) and use an inline `## References` section. Use **underscores, not hyphens**, in property keys — Dataview/DQL parses `-` as a minus operator, so `last-reviewed` breaks queries.
 - **`index.md` is the canonical catalog; Dataview stays separate.** Maintain `index.md` by hand as the authoritative, materialized list of pages — legible outside Obsidian, with editorial grouping a query can't express. Live property/staleness views go in `dashboard.md`, never embedded in `index.md`: a rendered query isn't a catalog. If hand-upkeep drifts at scale, materialize via a rebuild script; a generator for a handful of pages is pre-architecture. (Resolved 2026-06-06.)
 - **Declare a surface's consumer.** Plugin-rendered views (e.g. Dataview) carry `audience: human` + `rendering:` in frontmatter and an agent directive, because their file contents are *queries/markup, not data*. Agents get the underlying facts from page frontmatter or `index.md` — never from a rendered view. Source-of-truth is always the frontmatter; rendered surfaces are derived and human-facing.
 - **Link related pages** with `[[concept-slug]]` (Obsidian-style; a link to a page that doesn't exist yet is a fine TODO marker).

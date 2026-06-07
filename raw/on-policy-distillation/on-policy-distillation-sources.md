@@ -1,8 +1,7 @@
 ---
 title: Sources — on-policy & self-distillation
 description: |
-  Immutable source layer for the on-policy-distillation concept page. Links, IDs, authors, and verbatim quotes extracted from the originals. Ground truth the wiki page compresses; do not paraphrase here.
-ingested: 2026-06-06
+  Source layer for the on-policy-distillation concept page: links, IDs, authors, and verbatim quotes from the originals — the ground truth the wiki page compresses. Don't paraphrase here; the set of sources evolves over time (added, pruned, simplified to footnotes).
 ---
 
 # Raw sources — on-policy distillation & the 2026 self-distillation wave
@@ -44,7 +43,8 @@ https://emilianopp.github.io/Privileged-Information-Distillation-and-Self-Distil
 
 - Privileged info `I` = context available at **train** time, not deploy: *"successful agentic trajectories," "ground truth answers," "self-reflection."* Teacher `π_T(y|x,I)`, student `π_S(y|x)`. *"Both start as the same model"* ⇒ self-distillation.
 - SFT = forward KL `D_KL(π_T‖π_S)`; self-distillation = reverse KL `D_KL(π_S‖π_T)` (teacher is target); reward-tilted target `π* ∝ π_T·exp(R/β)` ⇒ `max_φ E[R] − β·D_KL(π_S‖π_T)` (*"same form as RL-as-inference, with the teacher as the prior"*).
-- KL is over **full-sequence policies**, not per-token. NO hint-injection algorithm, NO error-localization, NO "no-rollout/dense-per-token" claim. (See correction in wiki page.)
+- KL is over **full-sequence policies**, not per-token: *"In practice, policies are distributions over full token sequences, and the KL divergences in the objectives above operate over this high-dimensional space."* No hint-injection algorithm, no error-localization, no per-token/dense-per-token claim.
+- **Bad-teacher failure mode:** *"One assumption that self-distillation relies on is that the teacher model π_Tθ has support over high-reward regions, meaning π_Tθ ≈ π⋆. While this is likely valid in many settings, it may not hold when even conditioning on I does not give the model sufficient coverage over high-reward regions."* — an inadequate teacher bounds the student.
 
 ## S4 — OPSD / Self-Distilled Reasoner
 
@@ -64,6 +64,7 @@ https://arxiv.org/abs/2601.20802
 - Self-teacher = current policy conditioned on **rich textual feedback** `f` (error msgs, test output) that scalar RL discards. *"the self-teacher, π_θ(·|x,f) ... the current policy (the 'student') prompted with the question x and the rich feedback f."*
 - `L_SDPO(θ) = Σ_t KL(π_θ(·|x,y_<t) ‖ stopgrad(π_θ(·|x,f,y_<t)))` — per-token, **forward KL**.
 - *"Whereas GRPO assigns a constant advantage to each generated token, SDPO assigns an individual advantage to each possible next token ... based on the agreement of student and teacher."* No new rollouts (reuses GRPO's); teacher = parallel forward pass.
+- **Replaces the GRPO objective** — standalone distillation loss, not an added term: *"the SDPO gradient is a (negated) logit-level policy gradient where the advantages are estimated using the self-teacher."* The scalar/verifier reward is not in the gradient; it only generates `f`. Not gated by success — failed attempts get environment errors, successful rollouts become reference solutions for other questions in the batch.
 - Results: sci-reasoning 70.2 vs 66.6 GRPO (~6× speedup); LiveCodeBench v6 48.8 vs 41.2 (~4×).
 
 ## S6 — SDFT / Self-Distillation Enables Continual Learning
@@ -82,3 +83,24 @@ https://arxiv.org/abs/2602.03143
 
 - SAGE = "self-hint aligned GRPO with privileged supervision." Under sparse terminal rewards GRPO stalls (rollouts in a group get identical reward ⇒ advantages collapse). Model samples a compact **hint (a plan/decomposition)**, then solves conditioned on hint+prompt; task reward unchanged; hints increase within-group outcome diversity so advantages don't vanish.
 - This is the "inject a hint to reshape the rollout distribution" idea — closest to the "insert hint tokens" description — but the hint is self-sampled up front, NOT an error-localized patch inserted by a separate critic model. (Verified via web search + HF paper page; abstract read, full PDF not.)
+
+## S8 — Background references (standard, pre-2026 — stubs for traceability)
+
+Well-known background references the wiki page names in passing. Canonical IDs from general knowledge; not re-verified against primary PDFs.
+
+- **Kim & Rush, "Sequence-Level Knowledge Distillation"** — EMNLP 2016. arXiv:1606.07947. (The "teacher-decoded → sequence-level KD" cell.)
+- **STaR — "Bootstrapping Reasoning With Reasoning"** — Zelikman, Wu, Mu, Goodman. NeurIPS 2022. arXiv:2203.14465. (Reward-filtered rollouts → imitation column.)
+- **PPO — "Proximal Policy Optimization Algorithms"** — Schulman, Wolski, Dhariwal, Radford, Klimov. 2017. arXiv:1707.06347.
+- **Generalized distillation — "Unifying distillation and privileged information"** — Lopez-Paz, Bottou, Schölkopf, Vapnik. ICLR 2016. arXiv:1511.03643. (The distillation-specific bridge the page invokes.)
+- **LUPI root — "A new learning paradigm: Learning using privileged information"** — Vapnik & Vashist. Neural Networks 2009. (Upstream of generalized distillation.)
+
+## S9 — Forward vs reverse KL (open-thread research)
+
+Web-gathered to seed the forward/reverse-KL open thread. **Abstracts are verbatim; in-body quotes and exact results were summarizer-extracted and need PDF confirmation before external citation.** arXiv IDs to confirm where flagged.
+
+- **MiniLLM: Knowledge Distillation of Large Language Models** — Gu, Dong, Wei, Huang. arXiv:2306.08543. Abstract (verbatim): *"We first replace the forward Kullback-Leibler divergence (KLD) objective in the standard KD approaches with reverse KLD, which is more suitable for KD on generative language models, to prevent the student model from overestimating the low-probability regions of the teacher distribution."* → the canonical case for **reverse KL** in generative LLM KD.
+- **GKD** — Agarwal et al. arXiv:2306.13649 (= S1). Generalized JSD(β) interpolates forward↔reverse; best divergence **task-dependent**; offers alternative losses "when the student lacks the expressivity to mimic the teacher."
+- **f-DISTILL — f-Divergence Minimization for Sequence-Level KD** — Wen, Li, Du, Mou. arXiv:2307.15190. Argues **symmetric** divergences (JS, total-variation) beat either pure KL; mode-seeking diagnostic via `lim f(r)/r` (finite ⇒ mode-seeking).
+- **DistiLLM** — Ko et al. arXiv:2402.03898. Both pure directions have gradient pathologies (forward → mode-averaging + noisy gradients; reverse → mode-collapse); proposes a **skewed KL** (mix the reference distribution), best α≈0.1, recommends skewed reverse.
+- **Rethinking KL in KD for LLMs (Adaptive KL)** — Wu, Tao, Wang, Zhao, Wong. arXiv:2404.02657. **Contrarian:** the mean/mode-seeking dichotomy *"does not hold"* for LLMs — FKL and RKL share the same optimum; they differ in fitting head (FKL) vs tail (RKL) early in training. Proposes Adaptive KL.
+- **(secondary, unverified)** "A Survey of On-Policy Distillation for LLMs" — arXiv:2604.00626 (2026). Frames forward = mode-covering/zero-avoiding, reverse = mode-seeking/zero-forcing; reports no consensus, advocates task-dependent selection. **ID and content not independently verified** (2026 ID, summarizer-read) — treat as secondary.
